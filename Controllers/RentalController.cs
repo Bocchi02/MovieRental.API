@@ -43,11 +43,29 @@ namespace MovieRental.API.Controllers
         [HttpPost]
         public async Task<ActionResult<RentalHeader>> PostRentalHeader(RentalHeader rentalHeader)
         {
+            // Ensure RentalDetails is initialized to prevent null errors
+            if (rentalHeader.RentalHeaderDetails == null || rentalHeader.RentalHeaderDetails.Count == 0)
+            {
+                return BadRequest("RentalHeader must have at least one RentalHeaderDetail.");
+            }
+
+            // Add the RentalHeader to the context
             _context.RentalHeaders.Add(rentalHeader);
+
+            // Add the RentalHeaderDetails to the context
+            foreach (var detail in rentalHeader.RentalHeaderDetails)
+            {
+                // Set the RentalHeaderId to the corresponding RentalHeader for each detail
+                detail.RentalHeaderId = rentalHeader.RentalHeaderId;  // This ensures the relationship is set
+                _context.RentalHeaderDetails.Add(detail);
+            }
+
+            // Save changes to the database
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetRentalHeader), new { id = rentalHeader.RentalHeaderId }, rentalHeader);
         }
+
 
         // Update a RentalHeader
         [HttpPut("{id}")]
@@ -58,11 +76,29 @@ namespace MovieRental.API.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(rentalHeader).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+            var existingRental = await _context.RentalHeaders
+                .Include(r => r.RentalHeaderDetails) // Ensure related data is included
+                .FirstOrDefaultAsync(r => r.RentalHeaderId == id);
 
+            if (existingRental == null)
+            {
+                return NotFound();
+            }
+
+            // Update only necessary properties
+            _context.Entry(existingRental).CurrentValues.SetValues(rentalHeader);
+
+            // Optional: If updating related data
+            if (rentalHeader.RentalHeaderDetails != null)
+            {
+                _context.RentalHeaderDetails.RemoveRange(existingRental.RentalHeaderDetails); // Remove old details
+                _context.RentalHeaderDetails.AddRange(rentalHeader.RentalHeaderDetails); // Add new details
+            }
+
+            await _context.SaveChangesAsync();
             return NoContent();
         }
+
 
         // Delete a RentalHeader and its RentalDetails
         [HttpDelete("{id}")]
@@ -83,46 +119,6 @@ namespace MovieRental.API.Controllers
             return NoContent();
         }
 
-        // -------------------------
-        // CRUD for RentalHeaderDetail
-        // -------------------------
-
-        // Get all RentalDetails for a specific RentalHeader
-        [HttpGet("{rentalHeaderId}/details")]
-        public async Task<ActionResult<IEnumerable<RentalHeaderDetail>>> GetRentalDetails(int rentalHeaderId)
-        {
-            return await _context.RentalHeaderDetails
-                .Where(rd => rd.RentalHeaderId == rentalHeaderId)
-                .ToListAsync();
-        }
-
-        // Add a RentalDetail to a RentalHeader
-        [HttpPost("{rentalHeaderId}/details")]
-        public async Task<ActionResult<RentalHeaderDetail>> PostRentalDetail(int rentalHeaderId, RentalHeaderDetail rentalDetail)
-        {
-            rentalDetail.RentalHeaderId = rentalHeaderId;
-            _context.RentalHeaderDetails.Add(rentalDetail);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetRentalDetails), new { rentalHeaderId = rentalDetail.RentalHeaderId }, rentalDetail);
-        }
-
-        // Delete a RentalDetail
-        [HttpDelete("{rentalHeaderId}/details/{rentalDetailId}")]
-        public async Task<IActionResult> DeleteRentalDetail(int rentalHeaderId, int rentalDetailId)
-        {
-            var rentalDetail = await _context.RentalHeaderDetails
-                .FirstOrDefaultAsync(rd => rd.RentalHeaderId == rentalHeaderId && rd.RentalHeaderDetailId == rentalDetailId);
-
-            if (rentalDetail == null)
-            {
-                return NotFound();
-            }
-
-            _context.RentalHeaderDetails.Remove(rentalDetail);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
+        
     }
 }

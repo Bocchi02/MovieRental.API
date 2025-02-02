@@ -8,8 +8,6 @@
         public int ReleaseYear { get; set; }
         public string Director {  get; set; }
         public decimal RentalPrice { get; set; }
-
-        public ICollection<RentalHeaderDetail> RentalHeaderDetails { get; set; }
       
     }
 }

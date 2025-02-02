@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MovieRental.API;
 
@@ -11,9 +12,11 @@ using MovieRental.API;
 namespace MovieRental.API.Migrations
 {
     [DbContext(typeof(MovieRentalDBContext))]
-    partial class MovieRentalDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250202055248_FixMovieIdMapping")]
+    partial class FixMovieIdMapping
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -135,10 +138,7 @@ namespace MovieRental.API.Migrations
             modelBuilder.Entity("MovieRental.API.Models.RentalHeaderDetail", b =>
                 {
                     b.Property<int>("RentalHeaderDetailId")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RentalHeaderDetailId"));
 
                     b.Property<int>("MovieId")
                         .HasColumnType("int");
@@ -153,8 +153,6 @@ namespace MovieRental.API.Migrations
                     b.HasKey("RentalHeaderDetailId");
 
                     b.HasIndex("MovieId");
-
-                    b.HasIndex("RentalHeaderId");
 
                     b.ToTable("RentalHeaderDetails");
                 });
@@ -180,7 +178,7 @@ namespace MovieRental.API.Migrations
 
                     b.HasOne("MovieRental.API.Models.RentalHeader", "RentalHeader")
                         .WithMany("RentalHeaderDetails")
-                        .HasForeignKey("RentalHeaderId")
+                        .HasForeignKey("RentalHeaderDetailId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

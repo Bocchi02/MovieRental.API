@@ -59,7 +59,8 @@ namespace MovieRental.API
                 entity.HasKey(rh => rh.RentalHeaderId);
                 entity.HasOne(rh => rh.Customer)
                     .WithMany(c => c.RentalHeaders)
-                    .HasForeignKey(rh => rh.CustomerId);
+                    .HasForeignKey(rh => rh.CustomerId)
+                    .OnDelete(DeleteBehavior.Cascade);
                 entity.Property(rh => rh.RentalDate)
                    .HasDefaultValueSql("GETDATE()");
             });
@@ -67,12 +68,16 @@ namespace MovieRental.API
             modelBuilder.Entity<RentalHeaderDetail>(entity =>
             {
                 entity.HasKey(rd => rd.RentalHeaderDetailId);
+                entity.Property(rd => rd.RentalHeaderDetailId)
+                    .ValueGeneratedOnAdd();
                 entity.HasOne(rd => rd.RentalHeader)
                     .WithMany(rh => rh.RentalHeaderDetails)
-                    .HasForeignKey(rd => rd.RentalHeaderDetailId);
+                    .HasForeignKey(rd => rd.RentalHeaderId)
+                    .OnDelete(DeleteBehavior.Cascade);
                 entity.HasOne(rd => rd.Movie)
-                    .WithMany(m  => m.RentalHeaderDetails)
-                    .HasForeignKey(rd => rd.MovieId);
+                    .WithMany()
+                    .HasForeignKey(rd => rd.MovieId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }
