@@ -17,20 +17,29 @@ namespace MovieRental.API.Controllers
         }
 
         [HttpGet]
-        public List<Customer> GetCustomers()
+        public async Task<ActionResult<IEnumerable<Customer>>> GetCustomers()
         {
-            return DBcontext.Customers.ToList();
+            var customers = await DBcontext.Customers
+                .Include(c => c.RentalHeaders)
+                .ThenInclude(rh => rh.RentalHeaderDetails)
+                .ThenInclude(rd => rd.Movie)
+                .ToListAsync();
+            return Ok(customers);
         }
 
         [HttpGet("id={id}")]
-        public ActionResult<Customer> GetCustomerById(int id)
+        public async Task<ActionResult<IEnumerable<Customer>>> GetCustomerById(int id)
         {
-            var customer = DBcontext.Customers.FirstOrDefault(c => c.CustomerId == id);
+            var customer = DBcontext.Customers
+                .Include(c => c.RentalHeaders)
+                .ThenInclude(rh =>  rh.RentalHeaderDetails)
+                .ThenInclude(rd => rd.Movie)
+                .FirstOrDefault(c => c.CustomerId == id);
 
             if (customer == null)
                 return NotFound();
 
-            return customer;
+            return Ok(customer);
         }
 
         [HttpPost]

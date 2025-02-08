@@ -20,7 +20,11 @@ namespace MovieRental.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RentalHeader>>> GetRentalHeaders()
         {
-            return await _context.RentalHeaders.Include(r => r.RentalHeaderDetails).ToListAsync();
+            return await _context.RentalHeaders
+                .Include(rd => rd.Customer)
+                .Include(rh => rh.RentalHeaderDetails)
+                .ThenInclude(rd => rd.Movie)
+                .ToListAsync();
         }
 
         // Get RentalHeader by ID with its RentalDetails
@@ -28,6 +32,7 @@ namespace MovieRental.API.Controllers
         public async Task<ActionResult<RentalHeader>> GetRentalHeader(int id)
         {
             var rentalHeader = await _context.RentalHeaders
+                .Include(r => r.Customer)
                 .Include(r => r.RentalHeaderDetails)
                 .FirstOrDefaultAsync(r => r.RentalHeaderId == id);
 
